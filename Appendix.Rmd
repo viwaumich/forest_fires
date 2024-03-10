@@ -1,0 +1,191 @@
+---
+title: "Appendix"
+author: "Vicky Wang"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r packages, include = FALSE}
+# Load any packages you may need here
+library(car)
+library(emmeans)
+```
+
+
+```{r readData, include = FALSE}
+# Save this template file in your final project's RStudio Project 
+# Edit this code chunk to read in your data
+fires <- read.csv("forestfires.csv")
+fires$month <- as.factor(fires$month)
+str(fires)
+```
+
+```{r fixyfixy, echo=FALSE}
+fires <- na.omit(fires)
+head(fires)
+fires <- fires[, c(3,5:13)]
+head(fires)
+fires$month <- factor(fires$month, levels = c("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"))
+```
+
+***
+
+#### **Figure 1: Numerical Summaries of Data**
+
+```{r figure1, echo = FALSE}
+summary(fires[2:10])
+```
+
+***
+
+#### **Figure 2: Scatterplot Matrix of Data**
+
+```{r figure2, echo=FALSE}
+plot( ~ DMC + DC + ISI + temp + wind + area, data = fires,
+      col = "darkorchid1")
+```
+
+***
+
+#### **Figure 3: Histograms**
+
+```{r figure3, echo=FALSE}
+hist(fires$area,
+     xlab = "Area Burned (in ha)",
+     main = "Histogram of Burned Forest Area in Montesinho Park",
+     col = "deeppink3",
+     breaks = 50)
+
+hist(log(fires$area),
+     xlab = "log(Area Burned)",
+     main = "Histogram of Log(Burn Area) in Montesinho Park",
+     col = "deeppink4")
+```
+
+***
+
+#### **Figure 4: Summary Output of Final Model**
+
+```{r figure4, echo = FALSE}
+lm_fires <- lm(log(area) ~ ISI + DC + DMC + wind + temp + month, data = fires)
+summary(lm_fires)
+```
+
+***
+
+#### **Figure 5: VIFs for Model 1**
+
+```{r figure 5, echo = FALSE}
+vif(lm_fires)
+#multicollinearity secondary test
+#summary(lm(ISI ~ DC + DMC + wind + temp, data = fires))$r.squared
+#summary(lm(DC ~ ISI + DMC + wind + temp, data = fires))$r.squared
+#summary(lm(DMC ~ DC + ISI + wind + temp, data = fires))$r.squared
+#summary(lm(wind ~ DC + DMC + ISI + temp, data = fires))$r.squared
+#summary(lm(temp ~ DC + DMC + wind + ISI, data = fires))$r.squared
+```
+
+***
+
+```{r figure6, echo = FALSE}
+# Include as many "figures" (model summaries, diagnostic plots, scatterplots by color, histograms, etc.) as necessary! But only include plots/output that you specifically reference in your report. 
+
+# Each code chunk should have the argument `echo = FALSE` so that the code does not show up in the knitted file
+
+# Each figure should be separated by three astersisks (***) 
+
+# Each figure should be labeled using four hashtags (####) 
+
+# If you have any questions, please don't hesitate to ask! This is worth a good chunk of points!
+
+```
+
+#### **Figure 6 Examining the Categorical Variable "Month"**
+
+#### a) Does Month Affect Fire Size?
+```{r plot, echo = FALSE}
+plot(area ~ month, data = fires,
+     xlab = "Month",
+     ylab = "Burn Area Size",
+     main = "Burn Area vs Month of Burn for Forest Fires",
+     col = c("red", "orange", "yellow", "green", "chartreuse", "blue", "purple", "deeppink", "hotpink", "pink", "grey", "black"))
+
+legend("topright",
+       legend = levels(fires$month),
+       col = c("red", "orange", "yellow", "green", "chartreuse", "blue", "purple", "deeppink", "hotpink", "pink", "grey", "black"),
+       pch = 1,
+       cex = 0.50)
+```
+
+#### b) Should we Include "Month" in the Model?
+```{r compare monthinclusion, echo = FALSE}
+lm_nomonth <- lm(log(area) ~ ISI + DC + DMC + wind + temp, data = fires)
+summary(lm_nomonth)
+lm_month <- lm(log(area) ~ ISI + DC + DMC + wind + temp + month, data = fires)
+summary(lm_month)
+```
+
+#### **Figure 7 Month and Temperature Interaction**
+
+#### a) Side-by-side of Temperature Ranges by Month
+```{r plot2, echo = FALSE}
+plot(fires$month, fires$temp,
+     xlab = "Month",
+     ylab = "Temperature (C)",
+     main = "Months and Temperatures for Fires",
+     col = c("coral", "coral1", "coral2", "coral3", "coral4", "brown", "brown2", "brown3", "brown", "brown4"))
+
+legend("topright",
+       legend = levels(fires$month),
+       col = c("coral", "coral1", "coral2", "coral3", "coral4", "brown", "brown2", "brown3", "brown", "brown4"),
+       pch = 1,
+       cex = 0.50)
+
+```
+#### b) Comparison of Interaction Terms with Month
+```{r monthinclusions, echo = FALSE}
+lm_nointeraction <- lm(log(area) ~ ISI + DC + DMC + wind + temp + month, data = fires)
+lm_interaction <- lm(log(area) ~ ISI + DC + DMC + wind + temp*month, data = fires)
+
+summary(lm_nointeraction)
+summary(lm_interaction)
+
+AIC(lm_nointeraction)
+AIC(lm_interaction)
+
+```
+
+#### c) Scatterplot of between Area and Temperature by Month
+```{r colorbymonth, echo = FALSE}
+plot(area ~ temp,
+     data = fires,
+     col = month,
+     xlab = "Temp (c)",
+     ylab = "Area (ha)",
+     main = "Scatterplot of Area vs Temperature by Month")
+```
+
+
+
+#### **Figure 7 OLS Assumptions**
+
+#### a) Residuals vs Fitted Values for lm_fires
+```{r lm_fires, echo = FALSE}
+plot(lm_fires$fitted.values, lm_fires$residuals,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted Values Plot",
+     col = "darkslategray4")
+abline(h = 0, lty = 2, col = "deeppink")
+```
+
+
+#### b) QQ Plot for lm_fires
+```{r qqplot, echo = FALSE}
+qqnorm(lm_fires$residuals, main = "QQ Plot of the Residuals", col = "deeppink")
+qqline(lm_fires$residuals, col = "purple")
+```
